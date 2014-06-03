@@ -24,11 +24,12 @@
     "symfony-cmf/routing": "1.1.*@alpha",
     "easyrdf/easyrdf": "0.8.*",
     "phpunit/phpunit": "3.7.*",
-    "zendframework/zend-feed": "2.2.*"
+    "zendframework/zend-feed": "2.2.*",
+    "symfony/console": "2.4.*"
   },
   "autoload": {
     "psr-4": {
-      "Drupal\\Core\\": "core/lib/Drupal/Core",
+      "Drupal\\Core\\": ["core/lib/Drupal/Core", "core/scripts/Drupal/Core" ],
       "Drupal\\Component\\": "core/lib/Drupal/Component",
       "Drupal\\Driver\\": "drivers/lib/Drupal/Driver"
     },

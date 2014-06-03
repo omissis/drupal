@@ -469,7 +469,6 @@ function simpletest_test_get_all($module = NULL) {
       // Scan all extension folders for class files.
       $classes = array();
       foreach ($all_data as $name => $data) {
-
         // Build the directory in which simpletest test classes would reside.
         $tests_dir = DRUPAL_ROOT . '/' . $data->getPath() . '/src/Tests';
 
