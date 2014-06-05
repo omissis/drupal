@@ -1,20 +1,22 @@
 <?php
 
-namespace Drupal\Core\Tests\PHPUnit;
+namespace Drupal\Core\Tests\ProxiedCommand\PHPUnit;
 
-use Drupal\Core\PHPUnit\CommandUtils;
+use Drupal\Core\ProxiedCommand\PHPUnit\OptionsFactory;
 use Symfony\Component\Console\Input\InputOption;
 
-class BootstrapperTest extends \PHPUnit_Framework_TestCase
+class OptionsFactoryTest extends \PHPUnit_Framework_TestCase
 {
     public function setUp()
     {
+        $this->factory = new OptionsFactory();
         $this->command = new \PHPUnit_TextUI_Command();
     }
 
     public function tearDown()
     {
         $this->command = null;
+        $this->factory = null;
     }
 
     /**
@@ -22,7 +24,7 @@ class BootstrapperTest extends \PHPUnit_Framework_TestCase
      */
     public function testOptionLinesParsing($expectedName, $expectedShortcut, $expectedDescription, $expectedMode, $line)
     {
-        $option = CommandUtils::createOptionFromHelpLine($line);
+        $option = $this->factory->createOptionFromHelpLine($line);
 
         $this->assertSame($expectedName, $option['name']);
         $this->assertSame($expectedShortcut, $option['shortcut']);
@@ -35,11 +37,18 @@ class BootstrapperTest extends \PHPUnit_Framework_TestCase
      */
     public function testUserTextLinesParsing($line)
     {
-        $this->assertEmpty(CommandUtils::createOptionFromHelpLine($line));
+        $this->assertEmpty($this->factory->createOptionFromHelpLine($line));
     }
 
     public function testHasAllOptions()
     {
+        $phpUnitTestRunner = new \ReflectionClass('PHPUnit_TextUI_TestRunner');
+        $runnerProperty = $phpUnitTestRunner->getProperty("versionStringPrinted");
+        $runnerProperty->setAccessible(true);
+
+        // Assert that no phpunit version string has been printed
+        $this->assertFalse($runnerProperty->getValue($phpUnitTestRunner));
+
         $phpunitCommand = new \ReflectionClass(get_class($this->command));
 
         $property = $phpunitCommand->getProperty("longOptions");
@@ -53,18 +62,24 @@ class BootstrapperTest extends \PHPUnit_Framework_TestCase
             $phpunitOptions['phpunit-' . rtrim($key, '=')] = $value;
         }
 
-        $options = CommandUtils::createOptionsFromCommand($this->command);
+        $options = $this->factory->createOptions();
 
         $diffOne = array_diff_key($phpunitOptions, $options);
         $diffTwo = array_diff_key($options, $phpunitOptions);
 
         $this->assertEmpty($diffOne, var_export($diffOne, true));
         $this->assertEmpty($diffTwo, var_export($diffTwo, true));
+
+        // Assert that phpunit version-string-has-been-printed flag has been reset to false
+        // This is needed because the way the options are parsed involves a static call to
+        // PHPUnit_TextUI_TestRunner::printVersionString(), which sets a class "flag", which
+        // is kind of problematic is some situations.
+        $this->assertFalse($runnerProperty->getValue($phpUnitTestRunner));
     }
 
     public function testNormalizeArgv()
     {
-        $argv = CommandUtils::normalizeArgv([
+        $argv = $this->factory->normalizeArgv([
             '--phpunit-foo',
             '--phpunit-bar',
             '-pub',
@@ -72,6 +87,7 @@ class BootstrapperTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->assertEquals([
+            'phpunit',
             '--foo',
             '--bar',
             '-b',
