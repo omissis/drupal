@@ -20,6 +20,8 @@ use Drupal\Core\ProxiedCommand\PHPUnit\OptionsFactory;
 
 /**
  * Run Drupal Tests
+ *
+ * @todo add the ability to support multiple proxied commands and move that away into a trait or base class.
  */
 class RunTestsCommand extends BaseCommand
 {
@@ -87,9 +89,11 @@ class RunTestsCommand extends BaseCommand
             $output->write(ob_get_contents(), true, OutputInterface::OUTPUT_RAW);
 
             ob_end_clean();
-        } else {
-            $output->write('no tests run!', true, OutputInterface::OUTPUT_RAW);
+
+            return;
         }
+
+        $output->write('no tests run!', true, OutputInterface::OUTPUT_RAW);
     }
 
     protected function setProxiedCommand(\PHPUnit_TextUI_Command $proxiedCommand)
