@@ -6,7 +6,7 @@ set_time_limit(0);
 
 $drupalRoot = realpath(dirname(dirname(__DIR__)));
 
-require_once $drupalRoot . '/core/vendor/autoload.php';
+$loader = require_once $drupalRoot . '/core/vendor/autoload.php';
 
 use Drupal\Core\Command\RunTestsCommand;
 use Symfony\Component\Console\Application;
