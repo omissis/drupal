@@ -16,6 +16,8 @@ use Symfony\Component\Finder\Finder;
 use Symfony\Component\Filesystem\Filesystem;
 
 use Drupal\Core\Test\Bootstrapper;
+use Drupal\Core\Test\DrupalWebTestCase;
+
 use Drupal\Core\ProxiedCommand\PHPUnit\OptionsFactory;
 
 /**
@@ -32,8 +34,14 @@ class RunTestsCommand extends BaseCommand
 
     public function __construct($name = null, $drupalRoot = null)
     {
+        global $loader;
+
         $this->optionsFactory = new OptionsFactory();
         $this->drupalRoot = $drupalRoot ?: dirname(dirname(dirname(dirname(dirname(__DIR__)))));
+
+        // Gotta add the Drupal namespaces otherwise the DrupalWebTestCase class is not usable.
+        $loader->add('Drupal\\Tests', $this->drupalRoot . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'tests');
+        $loader->add('Drupal', $this->drupalRoot . DIRECTORY_SEPARATOR . 'core' . DIRECTORY_SEPARATOR . 'lib');
 
         parent::__construct($name);
     }
@@ -62,8 +70,7 @@ class RunTestsCommand extends BaseCommand
     {
         $optionUrl = $input->getOption('url') ?: $this->defaultTestUri;
 
-        $this->bootstrapper = new Bootstrapper($this->drupalRoot, $optionUrl);
-        $kernel = $this->bootstrapper->bootstrap();
+        DrupalWebTestCase::setBootstrapper(new Bootstrapper($this->drupalRoot, $optionUrl));
 
         if ($input instanceof ArrayInput) {
             $input = new StringInput((string)$input);

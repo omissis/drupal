@@ -3,7 +3,12 @@
 namespace Drupal\Core\Test;
 
 use Drupal\Core\Site\Settings;
+use Drupal\Core\Language\Language;
+use Drupal\Core\Database\Database;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Config\FileStorage;
 
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -11,7 +16,9 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class Bootstrapper
 {
+    private $kernel;
     private $request;
+    private $container;
     private $drupalRoot;
 
     /**
@@ -22,6 +29,7 @@ class Bootstrapper
         $this->drupalRoot = $drupalRoot;
 
         $this->request = RequestFactory::createFromUri($uri);
+        $this->container = new ContainerBuilder();
     }
 
     /**
@@ -53,17 +61,18 @@ class Bootstrapper
             ));
         }
 
-        $kernel = new TestKernel(drupal_classloader());
-        $kernel->boot();
+        $this->kernel = new TestKernel(drupal_classloader());
+        $this->kernel->boot();
 
-        $container = $kernel->getContainer();
-        $container->enterScope('request');
-        $container->set('request', $this->request, 'request');
+        $container = $this->kernel->getContainer();
+
+        $container->set('request', $this->request);
         $container->get('request_stack')->push($this->request);
 
-        $moduleHandler = $container->get('module_handler');
-        $moduleHandler->loadAll();
+        $container->set('config.storage', new FileStorage(sys_get_temp_dir(), 'drupal_web_test'));
 
-        return $kernel;
+        drupal_bootstrap(DRUPAL_BOOTSTRAP_CODE);
+
+        return $this->kernel;
     }
 }
