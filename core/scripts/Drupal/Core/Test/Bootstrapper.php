@@ -68,7 +68,6 @@ class Bootstrapper
 
         $container->set('request', $this->request);
         $container->get('request_stack')->push($this->request);
-
         $container->set('config.storage', new FileStorage(sys_get_temp_dir(), 'drupal_web_test'));
 
         drupal_bootstrap(DRUPAL_BOOTSTRAP_CODE);

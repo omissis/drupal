@@ -47,6 +47,8 @@ abstract class DrupalWebTestCase extends UnitTestCase
     {
         parent::setUp();
 
+        $this->container->get('config.storage')->write('core.extension', array('module' => array(), 'theme' => array()));
+
         $this->enableModules($this->getModulesToEnable());
     }
 
@@ -54,6 +56,23 @@ abstract class DrupalWebTestCase extends UnitTestCase
      * Force subclasses to declare what modules they need to enable.
      */
     public abstract function getModulesToEnable();
+
+    /**
+     * Installs default configuration for a given list of modules.
+     *
+     * @param array $modules
+     *   A list of modules for which to install default configuration.
+     */
+    protected function installConfig(array $modules) {
+        foreach ($modules as $module) {
+            if (!$this->container->get('module_handler')->moduleExists($module)) {
+                throw new \RuntimeException(format_string("'@module' module is not enabled.", array(
+                    '@module' => $module,
+                )));
+            }
+            $this->container->get('config.installer')->installDefaultConfig('module', $module);
+        }
+    }
 
     /**
      * Enables modules for this test.
