@@ -15,11 +15,6 @@ abstract class DrupalWebTestCase extends UnitTestCase
     protected static $bootstrapper;
 
     /**
-     * @var Drupal\Core\DependencyInjection\ContainerBuilder
-     */
-    protected $container;
-
-    /**
      * @var Drupal\Core\Test\TestKernel
      */
     protected $kernel;
@@ -29,13 +24,13 @@ abstract class DrupalWebTestCase extends UnitTestCase
      */
     protected $modules;
 
-    public function __construct($name = NULL, array $data = array(), $dataName = '') {
+    public function __construct($name = NULL, array $data = array(), $dataName = '')
+    {
         if (empty(self::$bootstrapper)) {
             throw new \RuntimeException('Bootstrapper must be set before starting web tests.');
         }
 
         $this->kernel = self::$bootstrapper->bootstrap();
-        $this->container = $this->kernel->getContainer();
     }
 
     public static function setBootstrapper(Bootstrapper $bootstrapper)
@@ -47,7 +42,7 @@ abstract class DrupalWebTestCase extends UnitTestCase
     {
         parent::setUp();
 
-        $this->container->get('config.storage')->write('core.extension', array('module' => array(), 'theme' => array()));
+        $this->container()->get('config.storage')->write('core.extension', array('module' => array(), 'theme' => array()));
 
         $this->enableModules($this->getModulesToEnable());
     }
@@ -58,6 +53,29 @@ abstract class DrupalWebTestCase extends UnitTestCase
     public abstract function getModulesToEnable();
 
     /**
+     * Debugging method.
+     *
+     * Used when writing new test cases and it's needed to list all the available services.
+     */
+    public function printContainerServiceIds()
+    {
+        foreach ($this->container()->getServiceIds() as $serviceId) {
+            echo $serviceId . "\n";
+        }
+        exit;
+    }
+
+    /**
+     * Helper method for getting kernel's container.
+     *
+     * @return \Drupal\Core\DependencyInjection\ContainerBuilder
+     */
+    protected function container()
+    {
+        return $this->kernel->getContainer();
+    }
+
+    /**
      * Installs default configuration for a given list of modules.
      *
      * @param array $modules
@@ -65,12 +83,12 @@ abstract class DrupalWebTestCase extends UnitTestCase
      */
     protected function installConfig(array $modules) {
         foreach ($modules as $module) {
-            if (!$this->container->get('module_handler')->moduleExists($module)) {
+            if (!$this->container()->get('module_handler')->moduleExists($module)) {
                 throw new \RuntimeException(format_string("'@module' module is not enabled.", array(
                     '@module' => $module,
                 )));
             }
-            $this->container->get('config.installer')->installDefaultConfig('module', $module);
+            $this->container()->get('config.installer')->installDefaultConfig('module', $module);
         }
     }
 
@@ -84,11 +102,11 @@ abstract class DrupalWebTestCase extends UnitTestCase
      */
     protected function enableModules(array $modules) {
         // Set the list of modules in the extension handler.
-        $module_handler = $this->container->get('module_handler');
+        $module_handler = $this->container()->get('module_handler');
 
         // Write directly to active storage to avoid early instantiation of
         // the event dispatcher which can prevent modules from registering events.
-        $active_storage =  $this->container->get('config.storage');
+        $active_storage =  $this->container()->get('config.storage');
         $extensions = $active_storage->read('core.extension');
 
         foreach ($modules as $module) {
@@ -96,6 +114,7 @@ abstract class DrupalWebTestCase extends UnitTestCase
             // Maintain the list of enabled modules in configuration.
             $extensions['module'][$module] = 0;
         }
+
         $active_storage->write('core.extension', $extensions);
 
         // Update the kernel to make their services available.
@@ -105,7 +124,7 @@ abstract class DrupalWebTestCase extends UnitTestCase
         // Ensure isLoaded() is TRUE in order to make _theme() work.
         // Note that the kernel has rebuilt the container; this $module_handler is
         // no longer the $module_handler instance from above.
-        $module_handler = $this->container->get('module_handler');
+        $module_handler = $this->container()->get('module_handler');
         $module_handler->reload();
     }
 }
